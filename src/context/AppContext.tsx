@@ -1,16 +1,15 @@
-import { createContext } from 'react'
+import { createContext } from "react";
 
 type AppContextType = {
-    accountCode: string,
-    setAccountCode: (ac: string) => void;
-    guardianEmail: string;
-    setGuardianEmail: (ge: string) => void;
-}
+  accountCode: string;
+  setAccountCode: (ac: string) => void;
+  guardianEmail: string;
+  setGuardianEmail: (ge: string) => void;
+};
 
 export const appContext = createContext<AppContextType>({
-    accountCode: '',
-    setAccountCode: () => {},
-    guardianEmail: '',
-    setGuardianEmail: () => {}
+  accountCode: "",
+  setAccountCode: () => {},
+  guardianEmail: "",
+  setGuardianEmail: () => {},
 });
-

@@ -1,6 +1,6 @@
-import { ConnectKitButton } from "connectkit";
-import { Box, Grid, Typography } from "@mui/material";
 import CircleIcon from "@mui/icons-material/Circle";
+import { Box, Grid, Typography } from "@mui/material";
+import { ConnectKitButton } from "connectkit";
 
 const ConnectedWalletCard = ({ address }: { address?: string }) => {
   return (

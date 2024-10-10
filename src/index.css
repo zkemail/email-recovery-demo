@@ -3,13 +3,28 @@
 @tailwind utilities;
 
 :root {
-  font-family: "Space Grotesk", sans-serif;;
+  font-family: "Fustat", sans-serif;
   line-height: 1.5;
   font-weight: 400;
   /* color-scheme: light dark; */
   color: rgba(255, 255, 255, 0.87);
   background-color: #ffbfbf;
-  background: radial-gradient(70.71% 70.71% at 50% 50%, #FFF 19%, rgba(255, 255, 255, 0.00) 61%), linear-gradient(38deg, rgba(255, 255, 255, 0.00) 60%, rgba(255, 255, 255, 0.69) 100%), linear-gradient(45deg, #FFF 10%, rgba(255, 255, 255, 0.00) 23.5%), linear-gradient(36deg, #FFF 12.52%, rgba(255, 255, 255, 0.00) 76.72%), linear-gradient(214deg, rgba(255, 255, 255, 0.00) 0%, rgba(255, 220, 234, 0.40) 37.53%, rgba(255, 255, 255, 0.00) 71%), linear-gradient(212deg, rgba(255, 255, 255, 0.00) 15%, #E4F1FE 72.5%, rgba(255, 255, 255, 0.00) 91.5%);
+  background: radial-gradient(70.71% 70.71% at 50% 50%,
+      #fff 19%,
+      rgba(255, 255, 255, 0) 61%),
+    linear-gradient(38deg,
+      rgba(255, 255, 255, 0) 60%,
+      rgba(255, 255, 255, 0.69) 100%),
+    linear-gradient(45deg, #fff 10%, rgba(255, 255, 255, 0) 23.5%),
+    linear-gradient(36deg, #fff 12.52%, rgba(255, 255, 255, 0) 76.72%),
+    linear-gradient(214deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 220, 234, 0.4) 37.53%,
+      rgba(255, 255, 255, 0) 71%),
+    linear-gradient(212deg,
+      rgba(255, 255, 255, 0) 15%,
+      #e4f1fe 72.5%,
+      rgba(255, 255, 255, 0) 91.5%);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,6 +37,7 @@ a {
   color: #3c3c3c;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #434343;
 }
@@ -29,7 +45,7 @@ a:hover {
 body {
   margin: 0;
   height: 100vh;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Fustat", sans-serif;
 }
 
 h1 {
@@ -39,21 +55,21 @@ h1 {
 
 button {
   border-radius: 26px;
-  border: 1px solid #94969C;
+  border: 1px solid #94969c;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Fustat", sans-serif;
   background-color: rgba(0, 255, 255, 0);
   cursor: pointer;
   transition: border-color 0.25s;
 }
 
-
 .tooltip {
   position: relative;
   display: inline-block;
-  border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+  border-bottom: 1px dotted black;
+  /* If you want dots under the hoverable text */
 }
 
 /* Tooltip text */
@@ -65,7 +81,7 @@ button {
   text-align: center;
   padding: 5px 0;
   border-radius: 6px;
- 
+
   /* Position the tooltip text - see examples below! */
   position: absolute;
   z-index: 1;
@@ -79,13 +95,14 @@ button {
 .tooltip .tooltiptext::after {
   content: " ";
   position: absolute;
-  top: 100%; /* At the bottom of the tooltip */
+  top: 100%;
+  /* At the bottom of the tooltip */
   left: 50%;
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
   border-color: black transparent transparent transparent;
-} 
+}
 
 button:focus,
 button:focus-visible {
@@ -97,9 +114,11 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #343434;
   }
+
   button {
     background-color: #f9f9f9;
   }

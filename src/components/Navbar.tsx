@@ -1,18 +1,15 @@
-import React, { useState } from "react";
-import { useTheme } from "@mui/material/styles";
-import { AppBar, Grid, IconButton, Slide } from "@mui/material/";
-import Typography from "@mui/material/Typography";
-import { Button } from "./Button";
-import Box from "@mui/material/Box";
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
-import { Web3Provider } from "../providers/Web3Provider";
-import { ConnectKitButton } from "connectkit";
-import { Link } from "react-router-dom";
-import MenuIcon from "@mui/icons-material/Menu";
-
-import { Dialog, Toolbar } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import MenuIcon from "@mui/icons-material/Menu";
+import { Dialog, Toolbar } from "@mui/material";
+import { AppBar, Grid, IconButton, Slide } from "@mui/material/";
+import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
 import { TransitionProps } from "@mui/material/transitions";
+import Typography from "@mui/material/Typography";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "./Button";
+import zkEmailLogo from "../assets/ZKEmailLogo.svg";
 
 const NAV_LINKS = [
   { link: "https://prove.email/blog", title: "Blog" },
@@ -132,30 +129,17 @@ const MobileNav = ({
         style={{ marginTop: "auto", marginBottom: "2rem" }}
       >
         <Button
-          color="secondary"
           variant="outlined"
           href="https://prove.email/blog/recovery"
           target="_blank"
           sx={{
             marginRight: theme.spacing(2),
+            color: 'white',
             textTransform: "none",
-            borderRadius: "26px",
-            ":hover": {
-              backgroundColor: "#E0F6FF", // Background color on hover
-            },
-            ":focus": {
-              outline: "none", // Remove outline on focus
-            },
-            ":active": {
-              outline: "none", // Remove outline on active
-            },
           }}
         >
           Learn More
         </Button>
-        <Web3Provider>
-          <ConnectKitButton />
-        </Web3Provider>
       </Grid>
     </Dialog>
   );
@@ -217,13 +201,8 @@ const NavBar: React.FC = () => {
                 justifyContent: { xs: "left", md: "center" },
               }}
             >
-              <MailOutlineIcon
-                style={{ fill: "#000000", marginLeft:'0.5rem', marginRight: "0.625rem" }}
-              />
               <Link to="/">
-                <Typography variant="h6" color="black" sx={{fontSize:{xs:'0.75rem', sm:'0.85rem'}}}>
-                  ZKEmail Recovery
-                </Typography>
+                <img style={{ verticalAlign: "middle" }} src={zkEmailLogo} />
               </Link>
             </Box>
           </Grid>
@@ -232,7 +211,7 @@ const NavBar: React.FC = () => {
             sm={5}
             md={6}
             sx={{
-              display: { xs: "none", sm:'none', md: "flex" },
+              display: { xs: "none", sm: "none", md: "flex" },
               borderRight: "0.5px solid black",
               paddingLeft: "1.5625rem",
               paddingY: "0.625rem",
@@ -242,11 +221,13 @@ const NavBar: React.FC = () => {
               {NAV_LINKS.map((navLink) => {
                 return (
                   <Button
-                    color="primary"
                     href={navLink.link}
                     target="_blank"
                     sx={{
-                      marginRight: {sm:theme.spacing(1), md:theme.spacing(2)},
+                      marginRight: {
+                        sm: theme.spacing(1),
+                        md: theme.spacing(2),
+                      },
                       textTransform: "none",
                     }}
                   >
@@ -289,25 +270,12 @@ const NavBar: React.FC = () => {
                 target="_blank"
                 sx={{
                   display: { xs: "none", lg: "block" },
-                  marginRight: theme.spacing(2),
                   textTransform: "none",
-                  borderRadius: "26px",
-                  ":hover": {
-                    backgroundColor: "#E0F6FF", // Background color on hover
-                  },
-                  ":focus": {
-                    outline: "none", // Remove outline on focus
-                  },
-                  ":active": {
-                    outline: "none", // Remove outline on active
-                  },
+                  lineHeight: '14px'
                 }}
               >
                 Learn More
               </Button>
-              <Web3Provider>
-                <ConnectKitButton />
-              </Web3Provider>
             </Box>
           </Grid>
         </Grid>

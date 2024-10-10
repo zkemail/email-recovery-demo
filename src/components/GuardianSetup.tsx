@@ -1,58 +1,40 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { ConnectKitButton } from "connectkit";
-import { Button } from "./Button";
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
-import { safeAbi } from "../abi/Safe";
-import { safeEmailRecoveryModuleAbi } from "../abi/SafeEmailRecoveryModule";
-import infoIcon from "../assets/infoIcon.svg";
-import { useAppContext } from "../context/AppContextHook";
-import { safeEmailRecoveryModule } from "../../contracts.base-sepolia.json";
-import {
-  genAccountCode,
-  getRequestGuardianCommand,
-  templateIdx,
-} from "../utils/email";
-import { readContract } from "wagmi/actions";
-import { config } from "../providers/config";
-import { relayer } from "../services/relayer";
-import { StepsContext } from "../App";
-import { STEPS } from "../constants";
-import toast from "react-hot-toast";
-
-import InputField from "./InputField";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Box,
   Grid,
+  IconButton,
   MenuItem,
   Select,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { useTheme } from "@mui/material";
+import { ConnectKitButton } from "connectkit";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import toast from "react-hot-toast";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { readContract } from "wagmi/actions";
+import { Button } from "./Button";
+import InputField from "./InputField";
 import Loader from "./Loader";
-
-const TIME_UNITS = {
-  SECS: {
-    value: "SECS",
-    multiplier: 1,
-    label: "Secs",
-  },
-  MINS: {
-    value: "MINS",
-    multiplier: 60,
-    label: "Mins",
-  },
-  HOURS: {
-    value: "HOURS",
-    multiplier: 60 * 60,
-    label: "Hours",
-  },
-  DAYS: {
-    value: "DAYS",
-    multiplier: 60 * 60 * 24,
-    label: "Days",
-  },
-};
+import { safeEmailRecoveryModule } from "../../contracts.base-sepolia.json";
+import { safeAbi } from "../abi/Safe";
+import { safeEmailRecoveryModuleAbi } from "../abi/SafeEmailRecoveryModule";
+import { StepsContext } from "../App";
+import infoIcon from "../assets/infoIcon.svg";
+import { STEPS } from "../constants";
+import { useAppContext } from "../context/AppContextHook";
+import { config } from "../providers/config";
+import { relayer } from "../services/relayer";
+import { genAccountCode, templateIdx } from "../utils/email";
+import { TIME_UNITS } from "../utils/recoveryDataUtils";
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
@@ -68,31 +50,27 @@ const GuardianSetup = () => {
     useAppContext();
   const stepsContext = useContext(StepsContext);
 
-  const [isAccountInitialized, setIsAccountInitialized] = useState(false);
   const [isAccountInitializedLoading, setIsAccountInitializedLoading] =
     useState(false);
   const [loading, setLoading] = useState(false);
   // 0 = 2 week default delay, don't do for demo
   const [recoveryDelay, setRecoveryDelay] = useState(1);
-  const [recoveryExpiry, setRecoveryExpiry] = useState(7);
+  const recoveryExpiry = 7;
   const [emailError, setEmailError] = useState(false);
   const [recoveryDelayUnit, setRecoveryDelayUnit] = useState(
     TIME_UNITS.SECS.value
   );
-  const [recoveryExpiryUnit, setRecoveryExpiryUnit] = useState(
-    TIME_UNITS.DAYS.value
-  );
+  // const recoveryExpiryUnit = TIME_UNITS.DAYS.value;
 
-  let interval: NodeJS.Timeout;
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const isMobile = window.innerWidth < 768;
-
+  // Fetches the safe wallet owners. This will return an array of addresses for various owners.
   const { data: safeOwnersData } = useReadContract({
     address,
     abi: safeAbi,
     functionName: "getOwners",
   });
-  console.log(safeOwnersData);
+
   const firstSafeOwner = useMemo(() => {
     const safeOwners = safeOwnersData as string[];
     if (!safeOwners?.length) {
@@ -101,32 +79,42 @@ const GuardianSetup = () => {
     return safeOwners[0];
   }, [safeOwnersData]);
 
-  const checkIfRecoveryIsConfigured = async () => {
+  const checkIfRecoveryIsConfigured = useCallback(async () => {
     setIsAccountInitializedLoading(true);
-    const isActivated = await readContract(config, {
+
+    // Check if recovery is set up and activated. If so, proceed to the next step.
+    // Note: In Safe 1.3, we can only verify if the acceptance request email has been replied to, not confirmed. The user must wait for this message before moving to the recovery step.
+
+    const getGuardianConfig = await readContract(config, {
       abi: safeEmailRecoveryModuleAbi,
       address: safeEmailRecoveryModule as `0x${string}`,
-      functionName: "isActivated",
+      functionName: "getGuardianConfig",
       args: [address as `0x${string}`],
     });
 
-    console.log(isActivated);
-
-    // TODO: add polling for this
-    if (isActivated) {
-      setIsAccountInitialized(isActivated);
+    // Check whether recovery is configured
+    if (
+      getGuardianConfig.acceptedWeight === getGuardianConfig.threshold &&
+      getGuardianConfig.threshold !== 0n
+    ) {
       setLoading(false);
-      stepsContext?.setStep(STEPS.REQUESTED_RECOVERIES);
+      stepsContext?.setStep(STEPS.WALLET_ACTIONS);
     }
-    setIsAccountInitializedLoading(false);
-  };
 
+    setIsAccountInitializedLoading(false);
+  }, [address, stepsContext]);
+
+  // Polling to check whether recovery is configured.
   useEffect(() => {
     checkIfRecoveryIsConfigured();
 
     // Clean up the interval on component unmount
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [checkIfRecoveryIsConfigured]);
 
   //logic to check if email input is a valid email
   useEffect(() => {
@@ -164,13 +152,17 @@ const GuardianSetup = () => {
         }
       );
 
+      // The account code is unique for each account.
       const acctCode = await genAccountCode();
+      localStorage.setItem("safe1_3AccountCode", acctCode);
       setAccountCode(accountCode);
 
       const guardianSalt = await relayer.getAccountSalt(
         acctCode,
         guardianEmail
       );
+
+      // The guardian address is generated by sending the user's account address and guardian salt to the computeEmailAuthAddress function
       const guardianAddr = await readContract(config, {
         abi: safeEmailRecoveryModuleAbi,
         address: safeEmailRecoveryModule as `0x${string}`,
@@ -178,6 +170,7 @@ const GuardianSetup = () => {
         args: [address, guardianSalt],
       });
 
+      // The configureSafeRecovery function takes recovery delay and expiry to set up the recovery process. Its units can be configured from the UI, but for this demo, we are hardcoding some values for ease of use.
       await writeContractAsync({
         abi: safeEmailRecoveryModuleAbi,
         address: safeEmailRecoveryModule as `0x${string}`,
@@ -191,21 +184,44 @@ const GuardianSetup = () => {
         ],
       });
 
-      console.debug("recovery configured");
+      // This function fetches the command template for the acceptanceRequest API call. The command template will be in the following format: [['Accept', "guardian", "request", "for", "{ethAddr}"]]
+      const command = await readContract(config, {
+        abi: safeEmailRecoveryModuleAbi,
+        address: safeEmailRecoveryModule as `0x${string}`,
+        functionName: "acceptanceCommandTemplates",
+        args: [],
+      });
 
-      const command = getRequestGuardianCommand(address);
-      const { requestId } = await relayer.acceptanceRequest(
-        safeEmailRecoveryModule as `0x${string}`,
-        guardianEmail,
-        acctCode,
-        templateIdx,
-        command
-      );
-
-      console.debug("accept req id", requestId);
+      try {
+        //   // Attempt the API call
+        await relayer.acceptanceRequest(
+          safeEmailRecoveryModule as `0x${string}`,
+          guardianEmail,
+          acctCode,
+          templateIdx,
+          command[0]
+            .join()
+            ?.replaceAll(",", " ")
+            .replaceAll("{ethAddr}", address)
+        );
+      } catch (error) {
+        // retry mechanism as this API call fails for the first time
+        console.warn("502 error, retrying...");
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+        await relayer.acceptanceRequest(
+          safeEmailRecoveryModule as `0x${string}`,
+          guardianEmail,
+          acctCode,
+          templateIdx,
+          command[0]
+            .join()
+            ?.replaceAll(",", " ")
+            .replaceAll("{ethAddr}", address)
+        );
+      }
 
       // Setting up interval for polling
-      interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         checkIfRecoveryIsConfigured();
       }, 5000); // Adjust the interval time (in milliseconds) as needed
     } catch (err) {
@@ -221,20 +237,17 @@ const GuardianSetup = () => {
     accountCode,
     writeContractAsync,
     recoveryDelay,
-    recoveryExpiry,
-    stepsContext,
+    recoveryDelayUnit,
+    checkIfRecoveryIsConfigured,
   ]);
 
-  if (isAccountInitializedLoading) {
+  if (isAccountInitializedLoading && !loading) {
     return <Loader />;
   }
-  console.log(
-    recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier,
-    recoveryExpiry * TIME_UNITS[recoveryExpiryUnit].multiplier
-  );
+
   return (
     <Box sx={{ marginX: "auto", marginTop: "100px", marginBottom: "100px" }}>
-      <Typography variant="h1" sx={{ paddingBottom: "1.5rem" }}>
+      <Typography variant="h2" sx={{ paddingBottom: "1.5rem" }}>
         Set Up Guardian Details
       </Typography>
       <Typography variant="h6" sx={{ paddingBottom: "5rem" }}>
@@ -255,11 +268,46 @@ const GuardianSetup = () => {
         <Grid
           item
           container
-          md={5.5}
+          md={9}
           justifyContent={"space-around"}
           xs={12}
-          sx={{ gap: { xs: 3, sm: 0 } }}
+          sx={{ gap: 3 }}
         >
+          <Grid item container>
+            <Grid item container xs alignItems={"center"}>
+              <Typography variant="body1">Guardian's Email</Typography>
+              <Tooltip
+                placement="top"
+                title={
+                  "Enter the email address of the guardian you want to set up for account recovery."
+                }
+                arrow
+              >
+                <IconButton
+                  size="small"
+                  aria-label="info"
+                  sx={{ marginLeft: 1 }}
+                >
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Grid>
+            <Grid item container xs={6} gap={2}>
+              <TextField
+                type="email"
+                size="small"
+                fullWidth
+                value={guardianEmail}
+                error={emailError}
+                helperText={
+                  emailError ? "Please enter the correct email address" : null
+                }
+                placeholder="guardian@prove.email"
+                onChange={(e) => setGuardianEmail(e.target.value)}
+                title="Guardian's Email"
+              />
+            </Grid>
+          </Grid>
           <Grid
             item
             container
@@ -267,8 +315,23 @@ const GuardianSetup = () => {
             justifyContent={"space-between"}
             alignItems="center"
           >
-            <Grid item>
+            <Grid item container xs alignItems={"center"}>
               <Typography variant="body1">Timelock</Typography>
+              <Tooltip
+                placement="top"
+                title={
+                  "This is the duration during which guardians cannot initiate recovery. Recovery can only be triggered once this period has ended."
+                }
+                arrow
+              >
+                <IconButton
+                  size="small"
+                  aria-label="info"
+                  sx={{ marginLeft: 1 }}
+                >
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Grid>
             <Grid item container xs={"auto"} gap={2}>
               <TextField
@@ -282,7 +345,6 @@ const GuardianSetup = () => {
                   )
                 }
                 title="Recovery Delay"
-              // helperText="This is the delay you the actual wallet owner has to cancel recovery after recovery has been initiated, helpful for preventing malicious behavior from guardians."
               />
 
               <Select
@@ -300,28 +362,6 @@ const GuardianSetup = () => {
               </Select>
             </Grid>
           </Grid>
-
-          {/* <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ marginRight: "35px" }}
-          >
-            <Typography variant="body1" sx={{ marginRight: '25px', textAlign:'left' }}>Recovery Expiry (hours)</Typography>
-              <InputNumber
-                type="number"
-                min={1}
-                value={recoveryExpiry}
-                onChange={(e) =>
-                  setRecoveryExpiry(
-                    parseInt((e.target as HTMLInputElement).value)
-                  )
-                }
-                title='Recovery Expiry (hours)'
-                message='This is the expiry delay that...'
-              />
-          </Box> */}
-
           <Grid
             item
             container
@@ -333,47 +373,16 @@ const GuardianSetup = () => {
             <ConnectKitButton />
           </Grid>
         </Grid>
-        <Grid item sx={{ borderRight: { md: "1px solid #EBEBEB" } }} />
-
-        <Grid item md={5.5} xs={12} sx={{ textAlign: "left" }}>
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{ paddingBottom: "20px", fontWeight: 700 }}
-            >
-              Guardian Details:
-            </Typography>
-            <Box display="flex" flexDirection="column" gap="1rem">
-              {[1].map((index) => (
-                <InputField
-                  placeholderText="guardian@prove.email"
-                  key={index}
-                  type="email"
-                  value={guardianEmail}
-                  onChange={(e) => setGuardianEmail(e.target.value)}
-                  label={`Guardian's Email`}
-                  locked={false}
-                  {...(guardianEmail && {
-                    status: emailError ? "error" : "okay",
-                    statusNote: emailError
-                      ? "Please enter the correct email address"
-                      : "Okay",
-                  })}
-                />
-              ))}
-            </Box>
-          </Box>
-        </Grid>
 
         <Grid item sx={{ marginX: "auto" }}>
           <Box
             sx={{ width: "330px", marginX: "auto", marginTop: "30px" }}
           ></Box>
           <Button
-            disabled={!guardianEmail || isAccountInitialized}
+            disabled={!guardianEmail || loading}
             loading={loading}
             onClick={configureRecoveryAndRequestGuardian}
-            filled={true}
+            variant={"contained"}
           >
             Configure Recovery & Request Guardian
           </Button>

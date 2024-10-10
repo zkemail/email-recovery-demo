@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, IconButton } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import {
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+} from "@mui/material";
+import React, { useState } from "react";
 
 interface MoreInfoDialogProps {
   title: string;
@@ -22,14 +28,14 @@ const MoreInfoDialog: React.FC<MoreInfoDialogProps> = ({ title, message }) => {
     <>
       <IconButton
         onClick={handleClickOpen}
-        sx={{ color: '#207CE9', '&:focus': { outline: 'none' } }}
+        sx={{ color: "#207CE9", "&:focus": { outline: "none" } }}
       >
         <InfoOutlinedIcon />
       </IconButton>
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle sx={{color:'#FD4BA1'}}>{title}</DialogTitle>
+        <DialogTitle sx={{ color: "#FD4BA1" }}>{title}</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{fontWeight:100}}>
+          <DialogContentText sx={{ fontWeight: 100 }}>
             {message}
           </DialogContentText>
         </DialogContent>

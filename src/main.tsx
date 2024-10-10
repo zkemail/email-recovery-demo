@@ -1,8 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Toaster } from "react-hot-toast";
 import App from "./App.tsx";
 import "./index.css";
-import { Toaster } from "react-hot-toast";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -11,9 +11,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       toastOptions={{
         duration: 5000,
         style: {
-          fontSize: "12px",
+          fontSize: "16px",
         },
       }}
     />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
